@@ -1,7 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 from sqlalchemy.orm import validates
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy_serializer import SerializerMixin
 
 convention = {
@@ -21,40 +20,60 @@ class Planet(db.Model, SerializerMixin):
     __tablename__ = 'planets'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
+    name = db.Column(db.String, nullable=False)
     distance_from_earth = db.Column(db.Integer)
     nearest_star = db.Column(db.String)
 
-    # Add relationship
-
-    # Add serialization rules
+    serialize_rules = ('-missions.planet',)
 
 
 class Scientist(db.Model, SerializerMixin):
     __tablename__ = 'scientists'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    field_of_study = db.Column(db.String)
+    name = db.Column(db.String, nullable=False)
+    field_of_study = db.Column(db.String, nullable=False)
 
-    # Add relationship
+    missions = db.relationship('Mission', backref='scientist', cascade="all, delete-orphan")
+    serialize_rules = ('-missions.scientist',)
 
-    # Add serialization rules
+    @validates('name')
+    def validate_name(self, key, value):
+        if not value:
+            raise ValueError("Scientist must have a name.")
+        return value
 
-    # Add validation
+    @validates('field_of_study')
+    def validate_field_of_study(self, key, value):
+        if not value:
+            raise ValueError("Scientist must have a field of study.")
+        return value
 
 
 class Mission(db.Model, SerializerMixin):
     __tablename__ = 'missions'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
+    name = db.Column(db.String, nullable=False)
+    scientist_id = db.Column(db.Integer, db.ForeignKey('scientists.id'), nullable=False)
+    planet_id = db.Column(db.Integer, db.ForeignKey('planets.id'), nullable=False)
 
-    # Add relationships
+    planet = db.relationship('Planet', backref='missions')
 
-    # Add serialization rules
+    @validates('name')
+    def validate_name(self, key, value):
+        if not value:
+            raise ValueError("Mission must have a name.")
+        return value
 
-    # Add validation
+    @validates('scientist_id')
+    def validate_scientist_id(self, key, value):
+        if not value:
+            raise ValueError("Mission must have a scientist_id.")
+        return value
 
-
-# add any models you may need.
+    @validates('planet_id')
+    def validate_planet_id(self, key, value):
+        if not value:
+            raise ValueError("Mission must have a planet_id.")
+        return value
