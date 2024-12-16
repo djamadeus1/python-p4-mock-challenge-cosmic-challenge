@@ -16,15 +16,21 @@ metadata = MetaData(naming_convention=convention)
 db = SQLAlchemy(metadata=metadata)
 
 
-class Planet(db.Model, SerializerMixin):
+class Planet(db.Model):
     __tablename__ = 'planets'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
-    distance_from_earth = db.Column(db.Integer)
-    nearest_star = db.Column(db.String)
+    distance_from_earth = db.Column(db.Integer, nullable=False)
+    nearest_star = db.Column(db.String, nullable=False)
 
-    serialize_rules = ('-missions.planet',)
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "distance_from_earth": self.distance_from_earth,
+            "nearest_star": self.nearest_star
+        }
 
 
 class Scientist(db.Model, SerializerMixin):
